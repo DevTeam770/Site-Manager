@@ -1,45 +1,95 @@
-import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { ShieldCheck } from 'lucide-react';
+import React, { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import "./LoginView.css";
 
-export const LoginView = () => {
-  const { login } = useAuth();
+export default function LoginView() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
+    
     try {
-      await login({ username, password });
+      await login(username, password);
+      navigate("/dashboard");
     } catch (err) {
-      setError("ACCESS DENIED: INVALID CREDENTIALS");
+      setError("פרטי ההתחברות אינם נכונים");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <div className="bg-slate-900 p-10 rounded-3xl border border-slate-800 shadow-2xl w-full max-w-sm text-center">
-        <ShieldCheck size={60} className="text-blue-500 mx-auto mb-6" />
-        <h1 className="text-xl font-black text-white mb-8 uppercase tracking-widest">Meet Control Login</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <p className="text-red-500 text-[10px] font-black">{error}</p>}
-          <input 
-            value={username} 
-            onChange={e => setUsername(e.target.value)} 
-            placeholder="Username" 
-            className="w-full bg-slate-950 p-3 rounded-xl border border-slate-800 text-white text-center outline-none focus:ring-1 focus:ring-blue-500" 
-          />
-          <input 
-            type="password" 
-            value={password} 
-            onChange={e => setPassword(e.target.value)} 
-            placeholder="Password" 
-            className="w-full bg-slate-950 p-3 rounded-xl border border-slate-800 text-white text-center outline-none focus:ring-1 focus:ring-blue-500" 
-          />
-          <button type="submit" className="w-full bg-blue-600 py-3 rounded-xl text-white font-black hover:bg-blue-500 transition-all uppercase tracking-widest">Authenticate</button>
-        </form>
+    <div className="split-login-container">
+      {/* צד שמאל: טופס התחברות */}
+      <div className="login-form-section">
+        <div className="login-content-box">
+          <div className="brand-logo">
+            <div className="logo-icon"></div>
+            <span>SiteManager</span>
+          </div>
+          
+          <div className="welcome-text">
+            <h2>ברוכים הבאים</h2>
+            <p>התחבר למערכת כדי לנהל את התשתית שלך</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="modern-form">
+            <div className="floating-input">
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder=" "
+                required
+              />
+              <label>שם משתמש / ID</label>
+            </div>
+
+            <div className="floating-input">
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder=" "
+                required
+              />
+              <label>סיסמה</label>
+            </div>
+
+            {error && <div className="error-badge">{error}</div>}
+
+            <button type="submit" className="prime-btn" disabled={loading}>
+              {loading ? "מאמת נתונים..." : "התחברות למערכת"}
+            </button>
+          </form>
+
+          <footer className="form-footer">
+            <p>© 2026 Infrastructure Control Systems</p>
+          </footer>
+        </div>
+      </div>
+
+      {/* צד ימין: תוכן ויזואלי (תמונה או גרדיאנט טכנולוגי) */}
+      <div className="login-visual-section">
+        <div className="visual-overlay"></div>
+        <div className="visual-content">
+          <h3>Real-time Infrastructure Monitoring</h3>
+          <div className="status-pills">
+            <span className="pill">Cloud</span>
+            <span className="pill">On-Prem</span>
+            <span className="pill">Security</span>
+          </div>
+        </div>
       </div>
     </div>
   );
-};
+}

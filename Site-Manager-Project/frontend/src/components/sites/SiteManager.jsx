@@ -1,101 +1,103 @@
-import React, { useState } from 'react';
-import { Lock, Unlock, Trash2, Edit3, ArrowRight, Check, X } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { siteAPI } from "../services/api"; // וודא שהנתיב ל-api.js נכון
+import "./SiteManager.css";
 
-export const SiteManager = ({ sites, setSites, navLevel, setNavLevel }) => {
-  const [selectedSiteId, setSelectedSiteId] = useState(null);
-  const [selectedSectionId, setSelectedSectionId] = useState(null);
-  const [unlockedIds, setUnlockedIds] = useState([]);
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [editingId, setEditingId] = useState(null);
-  const [editValue, setEditValue] = useState('');
-  
-  const activeSite = sites.find(s => s.id === selectedSiteId);
-  const activeSection = activeSite?.sections?.find(sec => sec.id === selectedSectionId);
-  const list = navLevel === 'list' ? sites : navLevel === 'sections' ? activeSite?.sections : activeSection?.phones;
+export default function SiteManager() {
+  const [sites, setSites] = useState([]);
+  const [selectedSite, setSelectedSite] = useState(null);
+  const [sections, setSections] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const handleUnlock = (item) => {
-    if (unlockedIds.includes(item.id)) {
-      if (navLevel === 'list') { setSelectedSiteId(item.id); setNavLevel('sections'); }
-      else if (navLevel === 'sections') { setSelectedSectionId(item.id); setNavLevel('phones'); }
-    } else {
-      const pass = prompt("Enter Access Key:");
-      if (pass === "zaq12wsx") setUnlockedIds([...unlockedIds, item.id]);
+  // טעינת רשימת האתרים בטעינת העמוד
+  useEffect(() => {
+    const fetchSites = async () => {
+      try {
+        setLoading(true);
+        const res = await siteAPI.getSites();
+        setSites(res.data);
+      } catch (err) {
+        setError("Failed to load sites.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSites();
+  }, []);
+
+  // פונקציה ללחיצה על אתר - טעינת התאים (Sections) שלו
+  const handleSiteSelect = async (site) => {
+    setSelectedSite(site);
+    try {
+      const res = await siteAPI.getSections(site.id);
+      setSections(res.data);
+    } catch (err) {
+      console.error("Failed to load sections", err);
+      setSections([]);
     }
   };
 
-  const executeDelete = (id) => {
-    const filter = (arr) => arr.filter(i => i.id !== id);
-    if (navLevel === 'list') setSites(filter(sites));
-    else if (navLevel === 'sections') {
-      setSites(sites.map(s => s.id === selectedSiteId ? { ...s, sections: filter(s.sections) } : s));
-    } else {
-      setSites(sites.map(s => s.id === selectedSiteId ? { ...s, sections: s.sections.map(sec => sec.id === selectedSectionId ? { ...sec, phones: filter(sec.phones) } : sec) } : s));
-    }
-    setConfirmDeleteId(null);
-  };
-
-  const saveEdit = (id) => {
-    const update = (arr) => arr.map(i => i.id === id ? { ...i, name: editValue.toUpperCase() } : i);
-    if (navLevel === 'list') setSites(update(sites));
-    else if (navLevel === 'sections') setSites(sites.map(s => s.id === selectedSiteId ? { ...s, sections: update(s.sections) } : s));
-    else setSites(sites.map(s => s.id === selectedSiteId ? { ...s, sections: s.sections.map(sec => sec.id === selectedSectionId ? { ...sec, phones: update(sec.phones) } : sec) } : s));
-    setEditingId(null);
-  };
+  if (loading && sites.length === 0) return <div className="loading-screen">Loading sites...</div>;
 
   return (
-    <div className="dashboard-container">
-      <header className="dashboard-header flex justify-between items-center">
-        <h1>{navLevel === 'list' ? 'Sites' : navLevel.toUpperCase()}</h1>
-        {navLevel !== 'list' && (
-          <button onClick={() => setNavLevel(navLevel === 'phones' ? 'sections' : 'list')} className="text-blue-600 font-bold text-[11px] uppercase flex items-center gap-2">
-            Back <ArrowRight size={14} />
-          </button>
-        )}
-      </header>
+    <div className="page site-manager">
+      <h2 className="page-header">Infrastructure Hierarchy</h2>
+      
+      {error && <div className="error-banner">{error}</div>}
 
-      <main className="flex gap-12 mt-10">
-        <div className="w-2/3 dashboard-section border-none">
-          <div className="space-y-8">
-            {list?.map(item => (
-              <div key={item.id} className="flex items-center justify-between border-b border-slate-50 pb-8 group">
-                <div className="flex items-center gap-6 cursor-pointer flex-1" onClick={() => !editingId && handleUnlock(item)}>
-                  {unlockedIds.includes(item.id) ? <Unlock className="text-green-500" size={24} /> : <Lock className="text-slate-200" size={24} />}
-                  
-                  {editingId === item.id ? (
-                    <input autoFocus value={editValue} onChange={(e) => setEditValue(e.target.value)} className="entry-name-large border-b-2 border-blue-500 outline-none w-full" />
-                  ) : (
-                    <span className="entry-name-large group-hover:text-blue-600 transition-colors">{item.name}</span>
-                  )}
-                </div>
-
-                {unlockedIds.includes(item.id) && (
-                  <div className="flex items-center gap-4">
-                    {confirmDeleteId === item.id ? (
-                      <div className="delete-confirm-box flex items-center gap-3">
-                        <span>Are you sure?</span>
-                        <button onClick={() => executeDelete(item.id)} className="bg-red-600 text-white px-3 py-1 rounded text-[10px] font-bold">YES</button>
-                        <button onClick={() => setConfirmDeleteId(null)} className="text-slate-400 font-bold">NO</button>
-                      </div>
-                    ) : editingId === item.id ? (
-                      <div className="flex gap-2">
-                        <Check className="text-green-500 cursor-pointer" onClick={() => saveEdit(item.id)} />
-                        <X className="text-red-500 cursor-pointer" onClick={() => setEditingId(null)} />
-                      </div>
-                    ) : (
-                      <>
-                        <Edit3 size={18} className="text-slate-300 hover:text-blue-500 cursor-pointer" 
-                               onClick={(e) => { e.stopPropagation(); setEditingId(item.id); setEditValue(item.name); }} />
-                        <Trash2 size={18} className="text-slate-300 hover:text-red-500 cursor-pointer" 
-                               onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(item.id); }} />
-                      </>
-                    )}
+      <div className="dashboard-split-layout">
+        {/* עמודה שמאלית: רשימת אתרים */}
+        <div className="dashboard-main-col">
+          <div className="card">
+            <h3 className="card-title">Select Physical Site</h3>
+            <div className="meetings-list">
+              {sites.map((site) => (
+                <div
+                  key={site.id}
+                  className={`meeting-row group-clickable ${selectedSite?.id === site.id ? "active-site" : ""}`}
+                  onClick={() => handleSiteSelect(site)}
+                >
+                  <div>
+                    <div className="meeting-title">{site.name}</div>
+                    <div className="meeting-meta">{site.description || "No description available"}</div>
                   </div>
-                )}
-              </div>
-            ))}
+                  <div className="badge-manage">Select</div>
+                </div>
+              ))}
+              {sites.length === 0 && <p className="empty-state">No sites found in database.</p>}
+            </div>
           </div>
         </div>
-      </main>
+
+        {/* עמודה ימנית: הצגת תאים (Sections) של האתר שנבחר */}
+        <div className="dashboard-favorites-col">
+          {selectedSite ? (
+            <div className="card fill">
+              <h3 className="card-title">Sections in {selectedSite.name}</h3>
+              <div className="sections-grid">
+                {sections.length > 0 ? (
+                  sections.map((section) => (
+                    <div key={section.id} className="meeting-item">
+                      <div className="meeting-info">
+                        <span className="meeting-id">{section.name}</span>
+                        <span className="meeting-group">Classification: {section.classification}</span>
+                      </div>
+                      <span className="meeting-badge">View Devices</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="empty-state">No sections assigned to this site.</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="card fill" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <p className="formal-muted">Please select a site from the left to view its sections.</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
-};
+}

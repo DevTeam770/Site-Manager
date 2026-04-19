@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Request  # ייבוא FastAPI כדי להגדיר את היישום
 from app.db.session import engine  # מנוע SQLAlchemy מההגדרות של DB
-from cors.middleware. import setup_cors  # פונקציה להגדרת CORS
 from app.api.v1.endpoints.auth import router as auth_router  # נתיב Auth
 from app.api.v1.endpoints.users import router as users_router  # נתיב Users
 from app.api.v1.endpoints.sites import router as sites_router
@@ -16,13 +15,24 @@ from logger_manager import LoggerManager
 import time
 from app.core.jwt import decode_access_token
 from jose import JWTError
+from fastapi.middleware.cors import CORSMiddleware
 
 
 app = FastAPI()  # יצירת אינסטנס של FastAPI עבור האפליקציה
 
 
+origins = [
+    "http://localhost:5174",
+]
 
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("startup")
 async def startup_event():

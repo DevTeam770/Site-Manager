@@ -1,62 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './context/AuthContext';
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
 
-// וודא שהשורה הזו קיימת ומפנה לנתיב הנכון:
-import Sidebar from './components/Sidebar'; 
-import Topbar from './components/Topbar';
-import Dashboard from './pages/Dashboard';
-// ...
-// ... שאר הייבואים
+// ייבוא רכיבי פריסה (Layout) - שימי לב לנתיב המדויק!
+import Sidebar from "./components/layout/Sidebar";
+import Topbar from "./components/layout/Topbar";
 
-function App() {
-  const { currentUser, login, loading: authLoading } = useAuth();
-  const [sites, setSites] = useState([]);
-  const [appLoading, setAppLoading] = useState(true);
+// ייבוא דפים וקומפוננטות
+import Dashboard from "./components/dashboard/Dashboard";
+import LoginView from "./components/auth/LoginView";
+import SiteManager from "./pages/SiteManager"; // או "./components/sites/SiteManager" לפי הצורך
+import SettingsView from "./components/settings/SettingsView";
 
-  useEffect(() => {
-    const initApp = async () => {
-      try {
-        // 1. לוגין אוטומטי
-        if (!currentUser) {
-          await login({ username: 'superadmin', password: 'zaq12wsx' });
-        }
-        
-        // 2. משיכת נתונים עם הגנה
-        const response = await fetch('http://localhost:5000/api/sites').catch(() => null);
-        if (response && response.ok) {
-          const data = await response.json();
-          setSites(Array.isArray(data) ? data : []);
-        }
-      } catch (err) {
-        console.error("Initialization error:", err);
-      } finally {
-        setAppLoading(false);
-      }
-    };
+// עיצוב
+import "./App.css";
 
-    initApp();
-  }, [currentUser, login]);
+export default function App() {
+  const { user, loading } = useAuth();
 
-  if (authLoading || appLoading) {
-    return <div style={{padding: '50px', textAlign: 'center'}}>Loading Site Manager...</div>;
+  // בזמן שהמערכת בודקת אם המשתמש מחובר
+  if (loading) {
+    return <div className="loading-screen">Loading system...</div>;
   }
 
   return (
-    <div className="app-layout">
-      <Sidebar />
-      <div className="main-wrapper">
-        <Topbar />
-        <main className="main-content">
-          <Routes>
-            <Route path="/dashboard" element={<Dashboard sites={sites} />} />
-            {/* ... שאר ה-Routes */}
-            <Route path="*" element={<Navigate to="/dashboard" />} />
-          </Routes>
-        </main>
-      </div>
-    </div>
+    <Routes>
+      {/* דף התחברות - ללא סיידבר */}
+      <Route 
+        path="/login" 
+        element={!user ? <LoginView /> : <Navigate replace to="/dashboard" />} 
+      />
+
+      {/* מסלולים מוגנים - דורשים התחברות */}
+      <Route
+        path="*"
+        element={
+          user ? (
+            <div style={{ display: "flex", minHeight: "100vh" }}>
+              {/* סיידבר קבוע בצד שמאל */}
+              <Sidebar />
+              
+              <div style={{ flex: 1, marginLeft: "240px", background: "#f4f6fc" }}>
+                {/* טופבר קבוע למעלה */}
+                <Topbar />
+                
+                {/* תוכן העמוד המשתנה */}
+                <main style={{ paddingTop: "80px", padding: "24px" }}>
+                  <Routes>
+                    <Route path="/" element={<Navigate replace to="/dashboard" />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/sites" element={<SiteManager />} />
+                    <Route path="/devices" element={<div>Devices Page (TBD)</div>} />
+                    <Route path="/users" element={<div>User Management (TBD)</div>} />
+                    <Route path="/settings" element={<SettingsView />} />
+                    <Route path="/help" element={<div>Help Center</div>} />
+                    
+                    {/* דף 404 אם הנתיב לא קיים */}
+                    <Route path="*" element={<Navigate to="/dashboard" />} />
+                  </Routes>
+                </main>
+              </div>
+            </div>
+          ) : (
+            <Navigate replace to="/login" />
+          )
+        }
+      />
+    </Routes>
   );
 }
-
-export default App;

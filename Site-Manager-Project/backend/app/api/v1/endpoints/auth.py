@@ -84,3 +84,16 @@ def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
         )
     except JWTError:
         raise HTTPException(status_code=401, detail="Refresh token expired or invalid")
+    
+
+@router.post("/logout")
+def logout(current_user: User = Depends(get_current_user)):
+    # כאן ניתן להוסיף לוגיקה לנטרול ה-refresh token אם יש מערכת נטרול tokens
+    
+    LoggerManager.log_audit(
+        user=current_user.username,
+        action="LOGOUT",
+        target=f"User:{current_user.username} (ID:{current_user.id})",
+        details=f"Role: {current_user.role}"
+    )
+    return {"message": "Logged out successfully"}

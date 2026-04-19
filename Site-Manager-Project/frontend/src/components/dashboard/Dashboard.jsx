@@ -1,50 +1,65 @@
-import React from 'react';
+import React, { useEffect, useState } from "react";
+import { siteAPI, deviceAPI, userAPI } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 
-export const Dashboard = ({ sites = [] }) => {
-  const { currentUser } = useAuth();
+export default function Dashboard() {
+  const { user } = useAuth();
+  const [stats, setStats] = useState({ sites: 0, devices: 0, users: 0 });
+  const [loading, setLoading] = useState(true);
 
-  // הגנה: אם sites הוא לא מערך, נגדיר אותו כמערך ריק כדי למנוע קריסה
-  const safeSites = Array.isArray(sites) ? sites : [];
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const [sitesRes, devicesRes, usersRes] = await Promise.all([
+          siteAPI.getSites(),
+          deviceAPI.getDevices(),
+          user.role === 'superadmin' ? userAPI.getAll() : Promise.resolve({ data: [] })
+        ]);
 
-  const stats = {
-    sites: safeSites.length,
-    sections: safeSites.reduce((a, s) => a + (s.sections?.length || 0), 0),
-    phones: safeSites.reduce((a, s) => a + (s.sections?.reduce((a2, sec) => a2 + (sec.phones?.length || 0), 0) || 0), 0)
-  };
+        setStats({
+          sites: sitesRes.data.length,
+          devices: devicesRes.data.length,
+          users: usersRes.data.length
+        });
+      } catch (err) {
+        console.error("Failed to load dashboard stats", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadStats();
+  }, [user]);
+
+  if (loading) return <div>Loading statistics...</div>;
 
   return (
     <div className="dashboard-container">
-      <header className="dashboard-header">
-        <h1>Dashboard</h1>
-        {currentUser && <p style={{color: '#64748b'}}>Welcome back, {currentUser.s_id}</p>}
-      </header>
+      <div className="dashboard-header">
+        <h1>Welcome back, {user?.username}</h1>
+        <p>System Overview & Infrastructure Status</p>
+      </div>
 
-      <div className="stats-grid">
-        <div className="v57-stat-card">
-          <span className="v57-label">Active Sites</span>
-          <div className="v57-number-row">
-            <span className="v57-number stat-red">{stats.sites}</span>
-            <span className="v57-unit">Units</span>
-          </div>
+      <div className="kpi-grid">
+        <div className="kpi-card">
+          <div className="kpi-label">Active Sites</div>
+          <div className="kpi-value">{stats.sites}</div>
         </div>
+        <div className="kpi-card">
+          <div className="kpi-label">Total Devices</div>
+          <div className="kpi-value">{stats.devices}</div>
+        </div>
+        {user?.role === 'superadmin' && (
+          <div className="kpi-card">
+            <div className="kpi-label">Registered Users</div>
+            <div className="kpi-value">{stats.users}</div>
+          </div>
+        )}
+      </div>
 
-        <div className="v57-stat-card">
-          <span className="v57-label">Infrastructure</span>
-          <div className="v57-number-row">
-            <span className="v57-number stat-green">{stats.sections}</span>
-            <span className="v57-unit">Sections</span>
-          </div>
-        </div>
-
-        <div className="v57-stat-card">
-          <span className="v57-label">Endpoints</span>
-          <div className="v57-number-row">
-            <span className="v57-number stat-blue">{stats.phones}</span>
-            <span className="v57-unit">Devices</span>
-          </div>
-        </div>
+      <div className="card" style={{ marginTop: '24px' }}>
+        <h3 className="card-title">Recent Activity</h3>
+        <p className="formal-muted">Connected to Backend: http://localhost:8080</p>
       </div>
     </div>
   );
-};
+}
