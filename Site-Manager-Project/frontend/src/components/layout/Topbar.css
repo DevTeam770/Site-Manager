@@ -1,0 +1,65 @@
+.topbar {
+  width: calc(100% - 250px);
+  height: 64px;
+  background: #1a2236;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  position: fixed;
+  top: 0;
+  left: 250px; /* מתחיל אחרי הסיידבר */
+  z-index: 900;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.topbar-logo {
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #4ade80; /* ירוק SITE MANAGER */
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.topbar-user {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.45rem 1.1rem;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.topbar-role-badge {
+  background: #f0b429; /* זהב */
+  color: #1a2236;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+.topbar-logout {
+  background: linear-gradient(90deg, #ffd580 70%, #eebf63 100%); /* הגראדיאנט שלך */
+  color: #232946;
+  border: none;
+  border-radius: 10px;
+  padding: 0.5rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s, filter 0.2s;
+}
+
+.topbar-logout:hover {
+  filter: brightness(1.1);
+  transform: scale(1.02);
+}

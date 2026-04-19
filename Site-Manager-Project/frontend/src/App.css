@@ -1,0 +1,49 @@
+:root {
+  --sidebar-bg: #1a2236;
+  --teal-accent: #2dd4bf;
+  --teal-glow: rgba(45, 212, 191, 0.3);
+  --bg-main: #f4f6fc;
+}
+
+.sidebar {
+  width: 240px;
+  background: var(--sidebar-bg);
+  height: 100vh;
+  position: fixed;
+  color: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-link {
+  padding: 12px 20px;
+  color: #e8edf5;
+  text-decoration: none;
+  display: block;
+  border-left: 3px solid transparent;
+  transition: 0.2s;
+}
+
+.nav-link.active {
+  background: rgba(45, 212, 191, 0.1);
+  border-left-color: var(--teal-accent);
+  color: var(--teal-accent);
+}
+
+.card {
+  background: white;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.role-badge {
+  background: var(--teal-accent);
+  color: var(--sidebar-bg);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
